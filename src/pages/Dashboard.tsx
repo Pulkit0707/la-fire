@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [fireUpdates, setFireUpdates] = React.useState([]);
   const [shelters, setShelters] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
+  const [showSuccess, setShowSuccess] = React.useState(false);
   const [formData, setFormData] = React.useState<ResourceRequest>({
     resourceType: '',
     address: '',
@@ -37,13 +38,22 @@ export default function Dashboard() {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      resourceType: '',
+      address: '',
+      description: ''
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const session = await supabase.auth.getSession();
-      if (!session.data.session?.user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.user) {
         navigate('/signin');
         return;
       }
@@ -55,20 +65,25 @@ export default function Dashboard() {
             resource_type: formData.resourceType,
             address: formData.address,
             description: formData.description,
-            user_id: session.data.session.user.id
+            user_id: session.user.id,
+            status: 'pending'
           }
         ]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw new Error('Failed to submit request');
+      }
 
       // Reset form
-      setFormData({
-        resourceType: '',
-        address: '',
-        description: ''
-      });
+      resetForm();
+      
+      // Show success message
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 3000);
 
-      alert('Resource request submitted successfully!');
     } catch (error) {
       console.error('Error:', error);
       alert('Failed to submit request. Please try again.');
@@ -79,30 +94,47 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      {showSuccess && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
+          Request submitted successfully to LA Fire Department!
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <button 
+          onClick={() => navigate('/donations')}
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 text-left w-full"
+        >
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Total Donations</h2>
             <Heart className="h-6 w-6 text-red-500" />
           </div>
           <p className="text-3xl font-bold text-red-600 mt-2">${totalDonations.toLocaleString()}</p>
-        </div>
+          <p className="text-sm text-gray-500 mt-2">Click to view all donations</p>
+        </button>
         
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <button 
+          onClick={() => navigate('/fires')}
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 text-left w-full"
+        >
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Active Fires</h2>
             <AlertTriangle className="h-6 w-6 text-yellow-500" />
           </div>
           <p className="text-3xl font-bold text-yellow-600 mt-2">3 Active</p>
-        </div>
+          <p className="text-sm text-gray-500 mt-2">Click to view fire locations</p>
+        </button>
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <button 
+          onClick={() => navigate('/shelters')}
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 text-left w-full"
+        >
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Available Shelters</h2>
             <MapPin className="h-6 w-6 text-green-500" />
           </div>
           <p className="text-3xl font-bold text-green-600 mt-2">5 Open</p>
-        </div>
+          <p className="text-sm text-gray-500 mt-2">Click to view shelter locations</p>
+        </button>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">

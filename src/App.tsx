@@ -7,6 +7,8 @@ import ResourceRequest from './pages/ResourceRequest';
 import FirstAid from './pages/FirstAid';
 import SignIn from './pages/SignIn';
 import Navigation from './components/Navigation';
+import FireLocations from './pages/FireLocations';
+import ShelterLocations from './pages/ShelterLocations';
 
 function App() {
   return (
@@ -20,6 +22,8 @@ function App() {
           <Route path="/request-resources" element={<ResourceRequest />} />
           <Route path="/first-aid" element={<FirstAid />} />
           <Route path="/signin" element={<SignIn />} />
+          <Route path="/fires" element={<FireLocations />} />
+          <Route path="/shelters" element={<ShelterLocations />} />
         </Routes>
       </div>
     </BrowserRouter>
