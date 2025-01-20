@@ -3,6 +3,7 @@ import { MapPin, AlertTriangle, Heart } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import { useNavigate } from 'react-router-dom';
+import EmergencyContacts from '../components/EmergencyContacts';
 
 interface ResourceRequest {
   resourceType: string;
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const [shelters, setShelters] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [showSuccess, setShowSuccess] = React.useState(false);
+  const [showForm, setShowForm] = React.useState(true);
   const [formData, setFormData] = React.useState<ResourceRequest>({
     resourceType: '',
     address: '',
@@ -51,13 +53,9 @@ export default function Dashboard() {
     setLoading(true);
 
     try {
+      // Get the current session, but don't require it
       const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session?.user) {
-        navigate('/signin');
-        return;
-      }
-
       const { error } = await supabase
         .from('resource_requests')
         .insert([
@@ -65,7 +63,7 @@ export default function Dashboard() {
             resource_type: formData.resourceType,
             address: formData.address,
             description: formData.description,
-            user_id: session.user.id,
+            user_id: session?.user?.id || null,
             status: 'pending'
           }
         ]);
@@ -75,15 +73,11 @@ export default function Dashboard() {
         throw new Error('Failed to submit request');
       }
 
-      // Reset form
+      // Reset form and show success state
       resetForm();
-      
-      // Show success message
+      setShowForm(false);
       setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-      }, 3000);
-
+      
     } catch (error) {
       console.error('Error:', error);
       alert('Failed to submit request. Please try again.');
@@ -92,13 +86,13 @@ export default function Dashboard() {
     }
   };
 
+  const handleRequestMore = () => {
+    setShowSuccess(false);
+    setShowForm(true);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      {showSuccess && (
-        <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
-          Request submitted successfully to LA Fire Department!
-        </div>
-      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <button 
           onClick={() => navigate('/donations')}
@@ -111,7 +105,6 @@ export default function Dashboard() {
           <p className="text-3xl font-bold text-red-600 mt-2">${totalDonations.toLocaleString()}</p>
           <p className="text-sm text-gray-500 mt-2">Click to view all donations</p>
         </button>
-        
         <button 
           onClick={() => navigate('/fires')}
           className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 text-left w-full"
@@ -136,71 +129,90 @@ export default function Dashboard() {
           <p className="text-sm text-gray-500 mt-2">Click to view shelter locations</p>
         </button>
       </div>
-
       <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-6">Request Resources</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="resourceType" className="block text-sm font-medium text-gray-700 mb-1">
-                What do you need?
-              </label>
-              <select
-                id="resourceType"
-                required
-                value={formData.resourceType}
-                onChange={(e) => setFormData(prev => ({ ...prev, resourceType: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
-              >
-                <option value="">Select a resource type</option>
-                <option value="water">Water</option>
-                <option value="food">Food</option>
-                <option value="shelter">Shelter</option>
-                <option value="medical">Medical Supplies</option>
-                <option value="evacuation">Evacuation Assistance</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
+        <div>
+          <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+            {showForm ? (
+              <>
+                <h2 className="text-xl font-semibold mb-6">Request Resources</h2>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="resourceType" className="block text-sm font-medium text-gray-700 mb-1">
+                      What do you need?
+                    </label>
+                    <select
+                      id="resourceType"
+                      required
+                      value={formData.resourceType}
+                      onChange={(e) => setFormData(prev => ({ ...prev, resourceType: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
+                    >
+                      <option value="">Select a resource type</option>
+                      <option value="water">Water</option>
+                      <option value="food">Food</option>
+                      <option value="shelter">Shelter</option>
+                      <option value="medical">Medical Supplies</option>
+                      <option value="evacuation">Evacuation Assistance</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
 
-            <div>
-              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                Delivery Address
-              </label>
-              <input
-                type="text"
-                id="address"
-                required
-                value={formData.address}
-                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter your address"
-              />
-            </div>
+                  <div>
+                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                      Delivery Address
+                    </label>
+                    <input
+                      type="text"
+                      id="address"
+                      required
+                      value={formData.address}
+                      onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
+                      placeholder="Enter your address"
+                    />
+                  </div>
 
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                Additional Details
-              </label>
-              <textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
-                rows={3}
-                placeholder="Describe your needs in detail"
-              />
-            </div>
+                  <div>
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                      Additional Details
+                    </label>
+                    <textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500"
+                      rows={3}
+                      placeholder="Describe your needs in detail"
+                    />
+                  </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 
-                focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 
-                disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Submitting...' : 'Submit Request'}
-            </button>
-          </form>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 
+                      focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 
+                      disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Submitting...' : 'Submit Request'}
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <h3 className="text-2xl font-semibold text-green-600 mb-4">
+                  Request submitted successfully to LA Fire Department!
+                </h3>
+                <button
+                  onClick={handleRequestMore}
+                  className="bg-red-600 text-white py-2 px-6 rounded-md hover:bg-red-700 
+                    focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  Request More Resources
+                </button>
+              </div>
+            )}
+          </div>
+          
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-md">
@@ -218,6 +230,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      <EmergencyContacts />
     </div>
   );
 }
