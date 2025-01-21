@@ -9,6 +9,7 @@ import SignIn from './pages/SignIn';
 import Navigation from './components/Navigation';
 import FireLocations from './pages/FireLocations';
 import ShelterLocations from './pages/ShelterLocations';
+import EmergencyContacts from './pages/EmergencyContacts';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/fires" element={<FireLocations />} />
           <Route path="/shelters" element={<ShelterLocations />} />
+          <Route path="/emergency-contacts" element={<EmergencyContacts />} />
         </Routes>
       </div>
     </BrowserRouter>

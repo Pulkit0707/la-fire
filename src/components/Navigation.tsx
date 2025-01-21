@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Flame, LogOut, LogIn, Heart } from 'lucide-react';
+import { Flame, LogOut, LogIn, Heart, Phone } from 'lucide-react';
 import { supabase, signInAnonymously } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 
@@ -44,6 +44,13 @@ export default function Navigation() {
             </Link>
           </div>
           <div className="flex items-center space-x-4">
+            <Link 
+              to="/emergency-contacts" 
+              className="flex items-center space-x-2 px-4 py-2 rounded-md bg-red-700 hover:bg-red-800"
+            >
+              <Phone className="h-5 w-5" />
+              <span>Emergency Contacts</span>
+            </Link>
             <Link 
               to="/first-aid" 
               className="flex items-center space-x-2 px-4 py-2 rounded-md bg-red-700 hover:bg-red-800"
